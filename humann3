@@ -1,1 +1,6 @@
 parallel -j 8 --regexp ' humann --threads 8 --input /home/trim/{}/{}_*_paired_1.fastq --output /home/function/{}' :::: /home/lists.txt
+
+humann_join_tables --input /home/function/ --file_name pathabundance --output /home/merged_humann3.tsv
+
+parallel -j 8 --regexp ' humann_regroup_table -i /home/function/{}/{}_*genefamilies.tsv -g uniref90_ko -o /home/function_ko/{}_KO.tsv' :::: /home/lists.txt
+humann_join_tables --input //home/all_ko/ --output /home/all_ko/humann3_ko.txt
