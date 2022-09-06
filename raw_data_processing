@@ -1,0 +1,5 @@
+#data retrieve
+bcl2fastq -R /mnt/seq_machine/NovaSeq6000/220819_A01066_0106_AHCHYTDMXY  -o /home/raw  --sample-sheet  /home/lists.csv
+
+# trim & dehost  
+parallel -j 8 --link --xapply --plus  --regexp 'kneaddata  -i /home/raw/{}_*R1.fastq.gz  -i /home/raw/{}_*R2.fastq.gz   --output  /home/trim/{/.}  --reference-db /srv/db/kneaddata --trimmomatic /srv/sw/trimmomatic/0.39 -t 8 --bypass-trf --trimmomatic-options "SLIDINGWINDOW:4:20 MINLEN:50" --bowtie2-options "--very-sensitive --dovetail" --remove-intermediate-output ' :::: /home/lists.txt
