@@ -1,0 +1,24 @@
+library(ggplot2)
+library(ggcorrplot)
+setwd("file_pathway")
+data<-read.table("positive_time_top10.txt",header=TRUE,sep="\t")
+head(data)
+
+r1<-cor(data$positive_time,data$data,method="pearson")
+r2<-cor(data$positive_time,data$data,method="spearman")
+
+p1<-ggplot(data=data, aes(x=positive_time, y=data))+
+  geom_point(aes(x = positive_time, y = data, color = Group), size=1.0, alpha=0.6,
+             position = position_jitterdodge())+scale_colour_manual(values=c("#fdae61", "#4575b4"))+
+  geom_smooth(method="lm",color="#1a9641")+
+  theme_bw()
+
+p1
+
+ggsave("positive_time_top10.pdf", width = 10, height = 8, units = "cm")
+
+row.names(data)<-data[,]
+data<-subset(data,select=-c(Group))
+corr <- round(cor(data), 1)
+p.mat <- cor_pmat(data)
+write.table(p.mat,"pmat.txt", sep="\t")
