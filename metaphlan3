@@ -1,0 +1,3 @@
+parallel -j 8 --link --xapply --plus  --regexp   ' metaphlan  --input_type fastq  --bowtie2db   /home/qinliu/anaconda3/envs/mpa/lib/python3.7/site-packages/metaphlan/metaphlan_databases /home/trim/{}/{}*_paired_1.fastq  -o  /home/metaphlan3/{}.metaphlan.txt'   :::: /home/lists.txt
+
+merge_metaphlan_tables.py *.txt > merged_abundance_table.txt
