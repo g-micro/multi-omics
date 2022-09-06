@@ -28,4 +28,4 @@ p_value<-sparccboot(
 )
 
 
-write.table(p_value,"corr.txt",sep="\t")
+write.table(p_value,"p.txt",sep="\t")
