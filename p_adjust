@@ -1,0 +1,5 @@
+
+setwd("file_pathway")
+data<-read.table("original_p.txt",sep = "\t",header = TRUE)
+data$p_adjust <- p.adjust(data$p,method = "BH")
+write.table(data,"p_adjust.txt", sep = "\t")
