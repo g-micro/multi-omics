@@ -1,0 +1,5 @@
+python3 run-bwa.py /home/covid_rawdata_bacteria/merged/{}*R1.fastq --fungi --output /home/covid_fungi/MiCoP/round1/{}.alignments.sam
+
+python3 run-bwa.py 345_S6_R1.fastq --fungi --output alignments.sam
+
+python3 compute-abundances.py alignments.sam --fungi
