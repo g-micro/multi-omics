@@ -1,0 +1,31 @@
+
+library(SpiecEasi)
+library(ggClusterNet)
+library(tidyverse)
+library(phyloseq)
+
+setwd("file_pathway")
+data<-read.table("merged_group_a_clean.txt",sep = "\t",header = TRUE)
+row.names(data)<-data[,1]
+data=data[,-1]
+
+
+result<-sparcc(data, iter = 20, inner_iter = 10, th = 0.1)
+
+write.table(result,"corr.txt",sep="\t")
+
+
+p_value<-sparccboot(
+  data,
+  sparcc.params = list(),
+  statisticboot = function(data, indices) triu(do.call("sparcc", c(list(data[indices, ,
+                                                                             drop = FALSE]), sparcc.params))$Cor),
+  statisticperm = function(data, indices) triu(do.call("sparcc",
+                                                       c(list(apply(data[indices, ], 2, sample)), sparcc.params))$Cor),
+  R,
+  ncpus = 1,
+  pval.sparccboot
+)
+
+
+write.table(p_value,"corr.txt",sep="\t")
