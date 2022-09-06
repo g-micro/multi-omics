@@ -1,0 +1,21 @@
+library ("phyloseq")
+library("ggplot2")
+library(permute)
+library(lattice)
+library(vegan) 
+library(tidyverse)  
+library(ggpubr)
+setwd("file_pathway")
+divdata=read.table("similarity.txt", sep="\t", header=TRUE,row.names=NULL,check.names=FALSE,quote="")
+
+my_comparisons<-list(c("grou_a","group_b"))
+shannon<-ggviolin(divdata, x="group", y="similarity", fill = "group", 
+                  palette = c("#e41a1c", "#377eb8","#4daf4a"),
+                  add = "boxplot", add.params = list(fill="white"))+
+  stat_compare_means(comparisons = my_comparisons, label = "p.signif")+
+  scale_y_continuous(limits=c(0,1.2))+labs(x="", y = "Similarity")+
+  theme(legend.title=element_blank(),legend.text=element_text(),axis.text = element_text(size=15), axis.title = element_text(size=16),legend.position = "none",panel.border = element_rect(colour = "black", fill=NA, size=0.25))
+shannon
+
+ggsave("similarity.pdf", width = 10, height = 10, units = "cm")
+
