@@ -1,0 +1,27 @@
+
+
+library ("phyloseq")
+library("ggplot2")
+library(vegan) 
+library(tidyverse) 
+library("ggpubr")
+
+setwd("file_pathway")
+
+divdata=read.table("baseline_severity.txt", sep="\t", header=TRUE)#, row.names = 1)
+
+divdata$group<-factor(divdata$group,order=TRUE, levels = c("group_a","group_b"))
+
+my_comparisons<-list(c("group_a","group_b"))
+
+
+p<-ggboxplot(divdata, x="group", y="severity", color = "group")+
+  geom_jitter(aes(x = group, y = severity, color = factor(group)), size=6, alpha=0.6,
+              position = position_jitterdodge())
+p<-p+stat_compare_means(comparisons = my_comparisons)+  stat_compare_means()+theme(legend.title=element_blank())+
+  theme()
+p
+
+ggsave("severity.pdf", width = 10, height = 14, units = "cm")
+
+
