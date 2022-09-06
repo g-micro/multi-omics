@@ -1,0 +1,25 @@
+rm(list = ls())
+library(ggplot2)
+setwd("file_pathway")
+data =read.table("results_final.txt", sep="\t", header=TRUE)
+
+head(data)
+data$color <- ifelse(data$log10q<log10(0.1) & abs(data$log2fold)>= 1,ifelse(data$log2fold > 1,'red','blue'),'gray')
+color <- c(red = "red",gray = "gray",blue = "blue")
+
+data$sign <- ifelse(data$log10q<log10(0.1) & abs(data$log2fold)>= 1,data$group,NA)
+
+p <- ggplot(data, aes(log2fold, -log10q, col = color)) +
+  geom_point() +
+  theme_bw() +
+  scale_color_manual(values = color) +
+  labs(x="log2(Fold Change)",y="-log10FDR") +
+  geom_hline(yintercept = -log10(0.1), lty=4,col="grey",lwd=0.6) +
+  geom_vline(xintercept = c(-1, 1), lty=4,col="grey",lwd=0.6) +
+  theme(legend.position = "none",
+        panel.grid=element_blank(),
+        axis.title = element_text(size = 16),
+        axis.text = element_text(size = 14))
+p
+
+ggsave('val_plot_pathway.pdf',width = 3,height = 3)
