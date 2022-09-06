@@ -1,0 +1,1 @@
+parallel -j 8 --regexp ' humann --threads 8 --input /home/trim/{}/{}_*_paired_1.fastq --output /home/function/{}' :::: /home/lists.txt
