@@ -1,0 +1,223 @@
+
+
+5.1 Virsorter
+
+
+
+#magic server 
+/home/qinliu/tools/virsorter-data/virsorter-data
+
+conda activate virsorter-new2 
+
+parallel -j 6 'wrapper_phage_contigs_sorter_iPlant.pl -f {} --db 1 --wdir /srv/projects/COVID/Virus/process/virsorter/{/.} --ncpu 4 --data-dir /home/qinliu/tools/virsorter-data/virsorter-data '  ::: /srv/projects/COVID/Virus/clean_dvirus/megahit_out_dvirus/megahit_contigs/1000.contigs/*.1000.fa
+
+cd /srv/projects/COVID/Virus/clean_dvirus/megahit_out_dvirus/megahit_contigs/1000.contigs 
+
+#test ok
+wrapper_phage_contigs_sorter_iPlant.pl -f /srv/projects/COVID/Virus/clean_dvirus/megahit_out_dvirus/megahit_contigs/1000.contigs/S235.1000.fa --db 1 --wdir output --ncpu 4 --data-dir /home/qinliu/tools/virsorter-data/virsorter-data   
+
+#parallel 
+parallel -j 6 'wrapper_phage_contigs_sorter_iPlant.pl -f {} --db 1 --wdir output/{/.} --ncpu 4 --data-dir /home/qinliu/tools/virsorter-data/virsorter-data '  ::: ./*.1000.fa
+
+
+parallel -j 1 'wrapper_phage_contigs_sorter_iPlant.pl -f {} --db 1 --wdir /srv/projects/COVID/Virus/process/virsorter/{/.} --ncpu 4 --data-dir /home/qinliu/tools/virsorter-data/virsorter-data '  ::: /srv/projects/COVID/Virus/megahit_out/1000.contigs/S125.1000.fa
+
+
+##解决error
+conda create -n virsorter-new2 -c bioconda perl-bioperl-core=1.007002 virsorter=1.0.6
+5.2 Circular
+
+#magic server
+
+
+for e in  `find /srv/projects/COVID/Virus/process/virsorter/Virsorter_output  -name "VIRSorter_circu.list" `; do  cp  $e /srv/projects/COVID/Virus/process/virsorter/circular/`echo ${e#/srv/projects/COVID/Virus/process/virsorter/Virsorter_output/} | sed ' s/\//_/g; s/_fasta//g ' `; done
+
+cd /srv/projects/COVID/Virus/process/virsorter/circular/
+for i in *.list ; do  less $i | grep "VIR" | awk -F "_" '{print$2"_"$3}' > ./${i%.circu.list}.cir.contig.list ; done
+
+5.3 pVogs
+
+a minimum of 2 pVogs with at least 3 per 1kb
+
+HMMscan was used to search the pVOGs hmm profile database using predicted protein sequences on VLS with and e-value filter of 1e-5, retaining the top hit in each case.
+
+5.3.1 prodigal 
+
+cd /lustre/project/SCNg/Qin/contig_test/prodigal/prodigal_1000
+
+parallel -j 10 --link --xapply 'prodigal -a {1/.}.pep -d {1/.}.cds -f gff -g 11 -o {1/.}.gff -p meta -s {1/.}.stat -i {} ' ::: *_1000.fa 
+
+
+# server 
+cd /srv/projects/COVID/Virus/clean_dvirus/megahit_out_dvirus/megahit_contigs/1000.contigs 
+
+module av
+module load prodigal-2.6.3
+
+parallel -j 10 --link --xapply 'prodigal -a prodigal_out/{1/.}.pep -d prodigal_out/{1/.}.cds -f gff -g 11 -o prodigal_out/{1/.}.gff -p meta -s prodigal_out/{1/.}.stat -i {} ' ::: /srv/projects/COVID/Virus/clean_dvirus/megahit_out_dvirus/megahit_contigs/1000.contigs/*.1000.fa 
+
+
+5.3.2 Hmmer 
+cd /lustre/project/SCNg/Qin/contig_test/prodigal/hmmer_1000
+
+parallel -j 6 'hmmsearch -o ./output/{/.}.txt --tblout ./output/{/.}.tbl -E 1e-5 /lustre/project/SCNg/Qin/contig_test/prodigal/hmmer/pVOG_ref.hmm {}'  ::: /lustre/project/SCNg/Qin/contig_test/prodigal/prodigal_1000/pep/*_1000.pep
+
+
+#magic server
+cd /srv/projects/COVID/Virus/process/hmmer
+
+
+parallel -j 6 ' hmmsearch -o ./hmm_out/{/.}.txt --tblout ./hmm_out/{/.}.tbl -E 1e-5 /home/qinliu/tools/hmm_db/pVOG_ref.hmm  {} '  ::: /srv/projects/COVID/Virus/process/prodigal/prodigal_out/*.1000.pep
+
+
+-> 结果F1_1000.tbl
+F1_1000.txt
+
+1.） less A4final.contigs.fa_1000.tbl |grep 'k141' |cut -f 1| awk -F "_"  '{print $1"_" $2"_"$3}' > A4_format1.txt
+
+2.） less A4_format1.txt | awk -F " "  '{print $1}' > A4_pVOGs.txt
+
+#第二列相同 第三列不同的
+#先提取2，3 列
+
+3） awk -F "_" '{print $2, $3}' A4_pVOGs.txt > A4_pVOGs_2_3.txt
+
+# A4_pVOGs_2_3.txt 中取2相同，3不同的
+
+awk '!a[$1]++{s[$1]=$0;b[$1$2]++;next} a[$1]++&&!b[$1$2]++{s[$1]=s[$1]!=""?s[$1]"\n"$0:$0;print s[$1];s[$1]=""}' A4_pVOGs_2_3.txt |sort | awk '{print "k141_"$1"_"$2}'> A4_pVOGs_final.txt
+ 
+ ##汇总
+ 
+ less A4final.contigs.fa_1000.tbl |grep 'k141' |cut -f 1| awk -F "_"  '{print $1"_" $2"_"$3}' |  awk -F " "  '{print $1}'|awk -F "_" '{print $2, $3}'|awk '!a[$1]++{s[$1]=$0;b[$1$2]++;next} a[$1]++&&!b[$1$2]++{s[$1]=s[$1]!=""?s[$1]"\n"$0:$0;print s[$1];s[$1]=""}' |sort | awk '{print "k141_"$1"_"$2}'> A4_pVOGs_final_2.txt
+ 
+
+
+统计contig长度
+
+cd /lustre/scratch/SCNg/qin/contigs_1000 
+
+for i in *.fasta ; do 
+perl fastalength.pl $i > $i\_length.txt;done
+
+for i in *.fa ; do 
+perl fastalength.pl $i > $i\_length.txt;done
+
+
+
+5.4 blast_n nt
+
+cd /srv/projects/COVID/Virus/clean_dvirus/megahit_out_dvirus/megahit_contigs/full_contigs
+
+for f in $(ls ./*.contigs.fa); do seqtk seq -L 3000 "$f"  >  /srv/projects/COVID/Virus/clean_dvirus/megahit_out_dvirus/megahit_contigs/3000.contigs/"${f%.contigs.fa}.3000.fa" ; done
+
+parallel -j 6 'blastn -query {}  -db  /lustre/project/SCNg/database/NCBI_nt/nt -out  new_6May_3000/{/.}_blastn.out -outfmt 6 -num_alignments 1 -evalue 1e-5  '  ::: /lustre/project/SCNg/Qin/contig_test/contigs_3000/*.fasta
+server index nt #path/nt
+
+cd /srv/projects/COVID/Virus/process/blastn_nt/
+
+# index path/nt
+
+parallel -j 6 'blastn -query {}  -db  /home/qinliu/tools/NCBI_nt/nt -out  covid_3000/{/.}_blastn.out -outfmt 6 -num_alignments 1 -evalue 1e-5  '  ::: /srv/projects/COVID/Virus/clean_dvirus/megahit_out_dvirus/megahit_contigs/3000.contigs/*.3000.fa
+
+nt_list
+
+
+1) contig length > 3000 的list 
+
+for i in *.fa ; do less $i|grep "k141" | sed 's/>//g'| cut -f1 | awk -F " " '{print$1}' > ${i%_1000.fa_3000.fasta}_3000.contigs ; done
+
+2 ）整理blast nt out的list 
+
+cd /lustre/project/SCNg/Qin/DNA_virus_covid/contigs/blast_nt/healthy_list
+
+for i in *nt.txt; do less $i| cut -f1|uniq > ${i%.blast.nt.txt}.nt.list;done
+
+3) 差集  1） -2）
+
+3000 list - blast nt list
+
+
+parallel -j 4 --link --xapply 'sort {1}  {2}  {2}  | uniq -u > {1/.}_final_nt_list  ' ::: 01_contig_3000_list/*.3000.contigs ::: *.nt.list
+
+
+
+parallel -j 4 --link --xapply 'sort {1}  {2}  {2}  | uniq -u > {1/.}_final_nt_list  ' ::: 01_contig_3000_list/*.3000.contigs ::: *.nt.list
+5.4 in house crAssphage database
+
+5.5 Blastn nt
+
+parallel -j 6 'blastn -query {}  -db  /lustre/project/SCNg/database/NCBI_nt/nt  -out  new_6May_3000/{/.}_blastn.out -outfmt 6 -num_alignments 1 -evalue 1e-5  '  ::: /lustre/project/SCNg/Qin/contig_test/contigs_3000/*.fasta
+
+greater than 3kb with no BLASTn alignments to the NT database (January ‘19) (e-value threshold: 1e-10)
+
+
+#找差集 full 3000 contig list -blast nt contig _list 
+# 大于3000但是没有blast 
+a.txt-b.txt:
+
+sort a.txt b.txt b.txt | uniq -u
+
+5.6 Blast viral ref
+
+parallel -j 6 'blastn -query {}  -db  /lustre/project/SCNg/Qin/tools/viral_db/viral_ncbi -out  new_6May/{/.}_blastn_viral_ref.out  -outfmt 6 -num_alignments 1 -evalue 1e-5 '  ::: /lustre/project/SCNg/Qin/contig_test/contigs_1000/*.fa
+
+
+#magic server
+
+#/home/qinliu/tools/viral_db/viral_ncbi  #viral_ncbi index
+parallel -j 6 'blastn -query {}  -db  /home/qinliu/tools/viral_db/viral_ncbi -out  covid_viral/{/.}_blastn_viral_ref.out  -outfmt 6 -num_alignments 1 -evalue 1e-5 '  ::: /srv/projects/COVID/Virus/clean_dvirus/megahit_out_dvirus/megahit_contigs/1000.contigs/*.1000.fa 
+
+/home/qinliu/tools/viral_db
+
+5.7 COG database ==less than 3 ribosomal proteins as predicted using the COG database ==
+
+https://github.com/transcript/COG
+
+cd /lustre/project/SCNg/Qin/contig_test/COG
+parallel -j 6 'diamond blastx -q {}  -d /lustre/project/SCNg/Qin/tools/COG_database/makedb_diamond/COG -o  {/.}_COG.m8 '  ::: /lustre/project/SCNg/Qin/contig_test/contigs_1000/*.fa
+
+
+##magic server 
+##data base /home/qinliu/tools/COG_database
+
+cd /srv/projects/COVID/Virus/process/COG
+
+parallel -j 6 'diamond blastx -q {}  -d /home/qinliu/tools/COG_database/COG -o  {/.}_COG.m8 '  ::: /srv/projects/COVID/Virus/megahit_out/1000.contigs/*.1000.fa
+
+COG less than 3 ribosomal proteins as predicted using the COG database
+
+1) 统计contig ribosomal proteins 数量
+cd /lustre/project/SCNg/Qin/contig_test/COG
+
+less F1_100* | cut -f1|uniq -c| sort -nr > cog.count.txt 
+
+less yourout |cut -f1|uniq -c| sort -nr > cog.count.txt 
+
+less S1.1000_COG.m8 |cut -f1|uniq -c| sort -nr > S1_cog.count.txt 
+
+2) 小于3的 contigs 
+less cog.count.txt |awk -F " " '{if($1<3)print$0}' 
+
+less S1_cog.count.txt |awk -F " " '{if($1<3)print$0}'  > S1_COG_list
+
+less S1_cog.count.txt |awk -F " " '{if($1<3)print$1}'  > S1_COG_list
+
+
+
+###_1000 contig_list 
+
+for i in *.fa; do less $i|grep "k141" | sed 's/>//g'| cut -f1 | awk -F " " '{print$1}' > ${i%.fa}_contigs ; done
+
+
+rename
+
+ls -lhs > 01_file_size.txt
+
+less  01_file_size.txt | grep "out"  |awk -F " " '{print$6"@"$10}' > 01_file_new.csv
+
+
+
+
+
+
+
